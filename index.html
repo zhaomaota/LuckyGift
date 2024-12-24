@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>礼物池</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes gradient-xy {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .animate-gradient-xy {
+            animation: gradient-xy 15s ease infinite;
+            background-size: 400% 400%;
+        }
+        
+        .animate-pulse-subtle {
+            animation: pulse-subtle 2s ease-in-out infinite;
+        }
+
+        .gift-display {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #fff6f6, #fff9f9);
+            border-radius: 50%;
+            box-shadow: 
+                0 10px 20px rgba(0,0,0,0.05),
+                inset 0 -2px 5px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+        }
+
+        #numberDisplay .gift-display {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #ffeef9, #fff9f9);
+            box-shadow: 
+                0 15px 30px rgba(0,0,0,0.1),
+                inset 0 -4px 10px rgba(0,0,0,0.05);
+        }
+
+        .gift-grid .gift-display {
+            width: 80px;  /* 增大礼物显示大小 */
+            height: 80px;
+            margin: auto;
+        }
+
+        .gift-display:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 15px 30px rgba(0,0,0,0.1),
+                inset 0 -2px 5px rgba(0,0,0,0.03);
+        }
+
+        .gift-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        #numberDisplay .gift-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        #numberDisplay .gift-icon {
+            font-size: 4rem;  /* 增大主礼物池中的图标大小 */
+        }
+
+        .gift-grid .gift-number {
+            font-size: 1.5rem;  /* 增大列表中的数字大小 */
+            font-weight: bold;
+        }
+
+        .gift-number {
+            position: absolute;
+            color: #4a5568;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            z-index: 2;
+        }
+
+        .gift-icon {
+            position: absolute;
+            font-size: 2.5rem;  /* 增大列表中的图标大小 */
+            opacity: 0.2;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        .gift-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);  /* 固定4列 */
+            gap: 15px;  /* 增加间距 */
+            padding: 15px;
+        }
+
+        .gift-display:hover .gift-icon {
+            opacity: 0.3;
+            transform: scale(1.1);
+        }
+
+        /* 自定义滚动条样式 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c7c7c7;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a0a0a0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-8 py-8">  <!-- 增加左右边距 -->
+        <!-- 初始设置表单 -->
+        <div id="setupForm" class="max-w-md mx-auto mb-8 p-6 bg-white rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">🎁 设置礼物池</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="totalNumbers" class="block text-sm font-medium text-gray-700 mb-1">总数量</label>
+                    <input type="number" id="totalNumbers" min="1" max="999" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500" value="180">
+                </div>
+                <button id="startButton" class="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg shadow-md hover:shadow-lg transition-all">
+                    开始抽取
+                </button>
+            </div>
+        </div>
+
+        <div id="mainContent" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">  <!-- 增加列间距 -->
+                <!-- 礼物池主体 -->
+                <div class="bg-white rounded-2xl shadow-lg p-10">  <!-- 增加内边距 -->
+                    <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">
+                        🎁 礼物池 🎁
+                    </h1>
+
+                    <div class="flex flex-col items-center gap-6">
+                        <!-- 数字显示区域 -->
+                        <div id="numberDisplay" class="animate-float">
+                            <div class="gift-display">
+                                <div class="gift-box">
+                                    <span class="gift-number">??</span>
+                                    <span class="gift-icon">🎁</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 抽取按钮 -->
+                        <button id="drawButton" class="px-8 py-3 rounded-full text-lg font-medium text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 transform transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1">
+                            抽一个!
+                        </button>
+                    </div>
+
+                    <!-- 信息显示区域 -->
+                    <div class="mt-8 text-center space-y-2">
+                        <p class="text-gray-600 text-lg">
+                            剩余礼物: <span id="remainingCount" class="font-semibold"></span>
+                        </p>
+                        <p class="text-gray-600 text-lg">
+                            已抽取: <span id="drawnCount" class="font-semibold">0</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 抽取记录 -->
+                <div class="bg-white rounded-2xl shadow-lg p-10">  <!-- 增加内边距 -->
+                    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">
+                        📝 抽取记录
+                    </h2>
+
+                    <!-- 视图切换 -->
+                    <div class="flex justify-center mb-4">
+                        <div class="bg-gray-100 rounded-lg p-1">
+                            <button id="listViewBtn" class="px-4 py-2 rounded-md transition-all bg-white shadow text-purple-600">
+                                📝 列表视图
+                            </button>
+                            <button id="ballViewBtn" class="px-4 py-2 rounded-md transition-all text-gray-600 hover:text-purple-600">
+                                🎁 礼物视图
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 记录显示区域 -->
+                    <div class="overflow-y-auto custom-scrollbar h-[450px] pr-2">
+                        <div id="recordsContainer" class="space-y-3">
+                            <div class="h-full flex items-center justify-center">
+                                <p class="text-center text-gray-500 py-4">
+                                    还没有抽取记录哦~
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class GiftPool {
+            constructor(totalNumbers) {
+                this.numbers = Array.from({ length: totalNumbers }, (_, i) => i + 1);
+                this.drawnRecords = [];
+                this.isSpinning = false;
+                this.isListView = true;
+                this.totalNumbers = totalNumbers;
+
+                this.initElements();
+                this.initEventListeners();
+                this.updateDisplay();
+            }
+
+            initElements() {
+                this.numberDisplay = document.getElementById('numberDisplay');
+                this.drawButton = document.getElementById('drawButton');
+                this.remainingCount = document.getElementById('remainingCount');
+                this.drawnCount = document.getElementById('drawnCount');
+                this.recordsContainer = document.getElementById('recordsContainer');
+                this.listViewBtn = document.getElementById('listViewBtn');
+                this.ballViewBtn = document.getElementById('ballViewBtn');
+            }
+
+            initEventListeners() {
+                this.drawButton.addEventListener('click', () => this.drawNumber());
+                this.listViewBtn.addEventListener('click', () => this.setView(true));
+                this.ballViewBtn.addEventListener('click', () => this.setView(false));
+            }
+
+            drawNumber() {
+                if (this.numbers.length === 0 || this.isSpinning) return;
+
+                this.isSpinning = true;
+                this.drawButton.disabled = true;
+                this.drawButton.textContent = '抽取中...';
+                this.numberDisplay.classList.add('animate-bounce');
+
+                let count = 0;
+                const intervalId = setInterval(() => {
+                    const randomIndex = Math.floor(Math.random() * this.numbers.length);
+                    const number = this.numbers[randomIndex];
+                    this.numberDisplay.querySelector('.gift-number').textContent = number;
+                    count++;
+
+                    if (count > 20) {
+                        clearInterval(intervalId);
+                        const finalIndex = Math.floor(Math.random() * this.numbers.length);
+                        const drawnNumber = this.numbers[finalIndex];
+                        this.numbers.splice(finalIndex, 1);
+
+                        this.numberDisplay.querySelector('.gift-number').textContent = drawnNumber;
+                        this.isSpinning = false;
+                        this.drawButton.disabled = false;
+                        this.drawButton.textContent = '抽一个!';
+                        this.numberDisplay.classList.remove('animate-bounce');
+
+                        this.drawnRecords.unshift({
+                            number: drawnNumber,
+                            timestamp: new Date()
+                        });
+
+                        this.updateDisplay();
+                    }
+                }, 50);
+            }
+
+            setView(isListView) {
+                this.isListView = isListView;
+                this.listViewBtn.className = `px-4 py-2 rounded-md transition-all ${
+                    isListView ? 'bg-white shadow text-purple-600' : 'text-gray-600 hover:text-purple-600'
+                }`;
+                this.ballViewBtn.className = `px-4 py-2 rounded-md transition-all ${
+                    !isListView ? 'bg-white shadow text-purple-600' : 'text-gray-600 hover:text-purple-600'
+                }`;
+                this.updateDisplay();
+            }
+
+            updateDisplay() {
+                this.remainingCount.textContent = this.numbers.length;
+                this.drawnCount.textContent = this.totalNumbers - this.numbers.length;
+
+                if (this.drawnRecords.length === 0) {
+                    this.recordsContainer.innerHTML = `
+                        <div class="h-full flex items-center justify-center">
+                            <p class="text-center text-gray-500 py-4">还没有抽取记录哦~</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (this.isListView) {
+                    this.renderListView();
+                } else {
+                    this.renderBallView();
+                }
+            }
+
+            renderListView() {
+                this.recordsContainer.innerHTML = this.drawnRecords
+                    .map((record, index) => `
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:shadow transition-shadow">
+                            <span class="text-xl font-semibold text-gray-800">#${record.number}</span>
+                            <span class="text-sm text-gray-500">${record.timestamp.toLocaleTimeString()}</span>
+                        </div>
+                    `)
+                    .join('');
+            }
+
+            renderBallView() {
+                this.recordsContainer.innerHTML = `
+                    <div class="gift-grid">
+                        ${this.drawnRecords.map(record => `
+                            <div>
+                                <div class="gift-display">
+                                    <div class="gift-box">
+                                        <span class="gift-number">${record.number}</span>
+                                        <span class="gift-icon">🎁</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            const setupForm = document.getElementById('setupForm');
+            const mainContent = document.getElementById('mainContent');
+            const startButton = document.getElementById('startButton');
+            const totalNumbersInput = document.getElementById('totalNumbers');
+
+            startButton.addEventListener('click', () => {
+                const totalNumbers = parseInt(totalNumbersInput.value);
+                if (totalNumbers > 0) {
+                    setupForm.classList.add('hidden');
+                    mainContent.classList.remove('hidden');
+                    new GiftPool(totalNumbers);
+                } else {
+                    alert('请输入有效的数量！');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
